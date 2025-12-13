@@ -801,7 +801,9 @@ body {
   stroke: var(--color-primary-hover);
   stroke-width: 3;
 }
-
+.react-flow__panel.react-flow__attribution.bottom.right{
+  display: none;
+}
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

@@ -27,7 +27,7 @@ function AppWithFlow() {
       <FlowSidebar onDragStart={handleDragStart} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={styles.topBar}>
-          <h1 style={styles.topBarH1}>SQL Query Visual Builder - React Flow</h1>
+          <h1 style={styles.topBarH1}>SQL Query Visual Builder</h1>
           <div style={styles.topActions}>
             {message && <div style={styles.successMsg}>{message}</div>}
           </div>
