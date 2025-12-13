@@ -1,137 +1,12 @@
 // src/components/RightPanel.tsx
 
-// import React, { useState } from 'react';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { addJoin, reset, removeJoin } from '../store/querySlice';
-// import type { RootState } from '../store/store';
-// import { generateSQL, DATABASE_SCHEMA } from '../services/databaseSchema';
-
-// export const RightPanel: React.FC = () => {
-//   const dispatch = useDispatch();
-//   const state = useSelector((state: RootState) => state.query);
-//   const [message, setMessage] = useState('');
-//   const [joinType, setJoinType] = useState('INNER');
-//   const [joinTable, setJoinTable] = useState('');
-//   const [joinCondition, setJoinCondition] = useState('');
-
-//   const sql = generateSQL(state);
-
-//   const handleAddJoin = () => {
-//     if (joinTable && joinCondition) {
-//       dispatch(addJoin({ type: joinType as any, table: joinTable, condition: joinCondition }));
-//       setMessage('✓ Join added');
-//       setJoinTable('');
-//       setJoinCondition('');
-//       setTimeout(() => setMessage(''), 3000);
-//     }
-//   };
-
-//   const handleCopySQL = () => {
-//     navigator.clipboard.writeText(sql);
-//     setMessage('✓ SQL copied to clipboard!');
-//     setTimeout(() => setMessage(''), 3000);
-//   };
-
-//   const handleReset = () => {
-//     dispatch(reset());
-//     setMessage('✓ Query reset');
-//     setTimeout(() => setMessage(''), 3000);
-//   };
-
-//   return (
-//     <div style={styles.rightPanel}>
-//       <h2 style={styles.heading}>⚙️ Options</h2>
-
-//       {message && <div style={styles.success}>{message}</div>}
-
-//       <div style={styles.panelSection}>
-//         <h3 style={styles.panelH3}>Join Tables</h3>
-//         <div style={styles.formGroup}>
-//           <label style={styles.label}>Join Type</label>
-//           <select value={joinType} onChange={(e) => setJoinType(e.target.value)} style={styles.select}>
-//             <option value="INNER">INNER JOIN</option>
-//             <option value="LEFT">LEFT JOIN</option>
-//             <option value="RIGHT">RIGHT JOIN</option>
-//             <option value="FULL">FULL OUTER JOIN</option>
-//           </select>
-//         </div>
-//         <div style={styles.formGroup}>
-//           <label style={styles.label}>Table</label>
-//           <select value={joinTable} onChange={(e) => setJoinTable(e.target.value)} style={styles.select}>
-//             <option value="">Select table...</option>
-//             {DATABASE_SCHEMA.tables.map(t => (
-//               <option key={t.name} value={t.name}>{t.name}</option>
-//             ))}
-//           </select>
-//         </div>
-//         <div style={styles.formGroup}>
-//           <label style={styles.label}>ON Condition</label>
-//           <input
-//             type="text"
-//             value={joinCondition}
-//             onChange={(e) => setJoinCondition(e.target.value)}
-//             placeholder="e.g., users.id = orders.user_id"
-//             style={styles.input}
-//           />
-//         </div>
-//         <button onClick={handleAddJoin} style={styles.btnPrimary}>
-//           Add Join
-//         </button>
-//       </div>
-
-//       {state.joins.length > 0 && (
-//         <div style={styles.panelSection}>
-//           <h3 style={styles.panelH3}>Active Joins ({state.joins.length})</h3>
-//           {state.joins.map((join, i) => (
-//             <div key={i} style={styles.joinTag}>
-//               <div style={{ fontSize: '12px', color:'#444' }}>
-//                 <strong>{join.type}</strong> {join.table}
-//               </div>
-//               <button
-//                 onClick={() => dispatch(removeJoin(i))}
-//                 style={styles.removeBtn}
-//               >
-//                 ✕
-//               </button>
-//             </div>
-//           ))}
-//         </div>
-//       )}
-
-//       <div style={styles.panelSection}>
-//         <h3 style={styles.panelH3}>Generated SQL</h3>
-//         <div style={styles.sqlOutput}>
-//           {sql}
-//         </div>
-//       </div>
-
-//       <div style={styles.panelSection}>
-//         <h3 style={styles.panelH3}>Query Summary</h3>
-//         <div style={styles.nodeContent}>
-//           <div>📊 Tables: {state.nodes.length}</div>
-//           <div>🔍 Filters: {state.filters.length}</div>
-//           <div>🔗 Joins: {state.joins.length}</div>
-//           <div>📈 Limit: {state.limit || 'None'}</div>
-//         </div>
-//       </div>
-
-//       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-//         <button onClick={handleCopySQL} style={{ ...styles.btnPrimary, flex: 1 }}>
-//           📋 Copy SQL
-//         </button>
-//         <button onClick={handleReset} style={{ ...styles.btnSecondary, flex: 1 }}>
-//           Reset
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addJoin, reset, removeJoin } from '../store/querySlice';
 import type { RootState } from '../store/store';
-import { generateSQL, getDatabaseSchema, DATABASE_SCHEMA } from '../services/databaseSchema';
+import { generateSQL } from '../services/databaseSchema';
+
+// import { generateSQL, getDatabaseSchema, DATABASE_SCHEMA } from '../services/databaseSchema';
 
 type TableDef = {
   name: string;
@@ -141,44 +16,16 @@ type TableDef = {
 export const RightPanel: React.FC = () => {
   const dispatch = useDispatch();
   const state = useSelector((state: RootState) => state.query);
+  const schemaState = useSelector((state: RootState) => state.schema);
 
   const [message, setMessage] = useState('');
   const [joinType, setJoinType] = useState('INNER');
   const [joinTable, setJoinTable] = useState('');
   const [joinCondition, setJoinCondition] = useState('');
 
-  // NEW: local state for tables coming from API
-  const [tables, setTables] = useState<TableDef[]>(DATABASE_SCHEMA.tables);
-  const [loadingTables, setLoadingTables] = useState(false);
-  const [tablesError, setTablesError] = useState<string | null>(null);
-
-  // Load tables from API on mount
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        setLoadingTables(true);
-        setTablesError(null);
-        const schema = await getDatabaseSchema();
-        if (!isMounted) return;
-        setTables(schema.tables); // will include api_users, api_products, etc.
-      } catch (err) {
-        console.error('Failed to load remote tables', err);
-        if (!isMounted) return;
-        setTablesError('Failed to load tables from API. Using local schema.');
-        setTables(DATABASE_SCHEMA.tables); // fallback
-      } finally {
-        if (isMounted) setLoadingTables(false);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   const sql = generateSQL(state);
 
-  const handleAddJoin = () => {
+   const handleAddJoin = () => {
     if (joinTable && joinCondition) {
       dispatch(addJoin({ type: joinType as any, table: joinTable, condition: joinCondition }));
       setMessage('✓ Join added');
@@ -205,7 +52,6 @@ export const RightPanel: React.FC = () => {
       <h2 style={styles.heading}>⚙️ Options</h2>
 
       {message && <div style={styles.success}>{message}</div>}
-      {tablesError && <div style={styles.error}>{tablesError}</div>}
 
       <div style={styles.panelSection}>
         <h3 style={styles.panelH3}>Join Tables</h3>
@@ -226,10 +72,9 @@ export const RightPanel: React.FC = () => {
             value={joinTable}
             onChange={(e) => setJoinTable(e.target.value)}
             style={styles.select}
-            disabled={loadingTables}
           >
-            <option value="">{loadingTables ? 'Loading tables...' : 'Select table...'}</option>
-            {tables.map((t) => (
+            <option value="">Select table...</option>
+            {schemaState.tables.map((t: TableDef) => (
               <option key={t.name} value={t.name}>
                 {t.name}
               </option>
