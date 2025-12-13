@@ -5,19 +5,27 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addFilter, setLimit, removeFilter } from '../store/querySlice';
 import type { RootState } from '../store/store';
 import { DATABASE_SCHEMA, getDatabaseSchema } from '../services/databaseSchema';
-
+import { addSchemaTable, setSchemaTables, type TableDef } from '../store/schemaSlice';
+import * as XLSX from 'xlsx'; // ← NEW
 
 interface SidebarProps {
   onDragStart: (table: any) => void;
 }
 
+// type TableDef = {
+//   name: string;
+//   columns: string[];
+// };
+
 export const FlowSidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
   const dispatch = useDispatch();
   const state = useSelector((state: RootState) => state.query);
+  const schemaState = useSelector((state: RootState) => state.schema);
   const [filterColumn, setFilterColumn] = useState('');
   const [filterOperator, setFilterOperator] = useState('=');
   const [filterValue, setFilterValue] = useState('');
-  const [schema, setSchema] = useState(DATABASE_SCHEMA); 
+  // const [schema, setSchema] = useState<{ tables: TableDef[] }>(DATABASE_SCHEMA);
+  const [excelError, setExcelError] = useState<string | null>(null);
 
   const handleAddFilter = () => {
     if (filterColumn && filterValue) {
@@ -33,28 +41,149 @@ export const FlowSidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
     onDragStart(table);
   };
 
-  useEffect(() => {
-    getDatabaseSchema().then(setSchema).catch(() => {
-      // fallback already handled in getDatabaseSchema,
-      // but you can log or show error here
+ // on mount: load schema from API into Redux
+useEffect(() => {
+  getDatabaseSchema()
+    .then((schema) => {
+      dispatch(setSchemaTables(schema.tables));
+    })
+    .catch(() => {
+      dispatch(setSchemaTables(DATABASE_SCHEMA.tables));
     });
-  }, []);
+}, [dispatch]);
+
+  // NEW: handle Excel upload and convert to a table definition
+  // const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+
+  //   setExcelError(null);
+
+  //   const reader = new FileReader();
+  //   reader.onload = (evt) => {
+  //     try {
+  //       const data = evt.target?.result;
+  //       if (!data) throw new Error('No file data');
+
+  //       // Read workbook
+  //       const workbook = XLSX.read(data, { type: 'array' });
+
+  //       // Take first sheet
+  //       const sheetName = workbook.SheetNames[0];
+  //       const sheet = workbook.Sheets[sheetName];
+  //       if (!sheet) throw new Error('No sheet found in file');
+
+  //       // Convert sheet to JSON using header row
+  //       const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
+  //         header: 1, // first row as array
+  //       });
+
+  //       if (!json.length) throw new Error('Sheet is empty');
+
+  //       const headerRow = json[0] as string[];
+  //       const columns = headerRow.map((h) => String(h).trim()).filter(Boolean);
+
+  //       if (!columns.length) throw new Error('No columns detected in first row');
+
+  //       // Build new table definition
+  //       const tableNameBase = file.name.replace(/\.[^.]+$/, '');
+  //       const newTable: TableDef = {
+  //         name: `excel_${tableNameBase}`,
+  //         columns,
+  //       };
+
+  //       // Append to schema tables
+  //       setSchema((prev) => ({
+  //         tables: [...prev.tables, newTable],
+  //       }));
+  //     } catch (err: any) {
+  //       console.error('Excel parse error:', err);
+  //       setExcelError(err?.message || 'Failed to parse Excel file');
+  //     } finally {
+  //       // reset input so same file can be selected again if needed
+  //       e.target.value = '';
+  //     }
+  //   };
+
+  //   reader.readAsArrayBuffer(file);
+  // };/
+
+  // Excel upload: dispatch addSchemaTable
+const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setExcelError(null);
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const data = evt.target?.result;
+      if (!data) throw new Error('No file data');
+
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      if (!sheet) throw new Error('No sheet found in file');
+
+      const json = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+      if (!json.length) throw new Error('Sheet is empty');
+
+      const headerRow = json[0] as (string | number)[];
+      const columns = headerRow.map((h) => String(h).trim()).filter(Boolean);
+      if (!columns.length) throw new Error('No columns detected in first row');
+
+      const tableNameBase = file.name.replace(/\.[^.]+$/, '');
+      const newTable: TableDef = {
+        name: `excel_${tableNameBase}`,
+        columns,
+      };
+
+      dispatch(addSchemaTable(newTable));
+    } catch (err: any) {
+      setExcelError(err?.message || 'Failed to parse Excel file');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
 
   return (
     <div style={styles.sidebar}>
       <h2 style={styles.sidebarH2}>📋 Tables</h2>
-      <div style={styles.tableList}>
-        {schema.tables.map(table => (
-          <div
-            key={table.name}
-            draggable
-            onDragStart={(e) => handleDragStart(e, table)}
-            style={styles.tableItem}
-          >
-            {table.name}
+
+      {/* NEW: Excel upload */}
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ ...styles.label, marginBottom: '6px' }}>
+          Import table from Excel (first row as header)
+        </label>
+        <input
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          onChange={handleExcelUpload}
+          style={{ fontSize: '12px', color:'#444' }}
+        />
+        {excelError && (
+          <div style={{ marginTop: '6px', fontSize: '11px', color: '#c0152f' }}>
+            {excelError}
           </div>
-        ))}
+        )}
       </div>
+
+      <div style={styles.tableList}>
+  {schemaState.tables.map((table) => (
+    <div
+      key={table.name}
+      draggable
+      onDragStart={(e) => handleDragStart(e, table)}
+      style={styles.tableItem}
+    >
+      {table.name}
+    </div>
+  ))}
+</div>
 
       <h2 style={styles.sidebarH2}>🎯 Query Builder</h2>
       <div style={styles.panelSection}>
@@ -67,8 +196,10 @@ export const FlowSidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
             style={styles.select}
           >
             <option value="">Select column...</option>
-            {state.nodes.flatMap(n => n.columns).map((col, i) => (
-              <option key={i} value={col}>{col}</option>
+            {state.nodes.flatMap((n) => n.columns).map((col, i) => (
+              <option key={i} value={col}>
+                {col}
+              </option>
             ))}
           </select>
         </div>
@@ -107,11 +238,10 @@ export const FlowSidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
           <h3 style={styles.panelH3}>Active Filters</h3>
           {state.filters.map((filter, i) => (
             <div key={i} style={styles.filterTag}>
-              <div>{filter.column} {filter.operator} '{filter.value}'</div>
-              <button
-                onClick={() => dispatch(removeFilter(i))}
-                style={styles.removeBtn}
-              >
+              <div>
+                {filter.column} {filter.operator} '{filter.value}'
+              </div>
+              <button onClick={() => dispatch(removeFilter(i))} style={styles.removeBtn}>
                 ✕
               </button>
             </div>
@@ -125,7 +255,9 @@ export const FlowSidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
           <input
             type="number"
             placeholder="10"
-            onChange={(e) => dispatch(setLimit(e.target.value ? parseInt(e.target.value) : null))}
+            onChange={(e) =>
+              dispatch(setLimit(e.target.value ? parseInt(e.target.value) : null))
+            }
             style={styles.input}
           />
         </div>
