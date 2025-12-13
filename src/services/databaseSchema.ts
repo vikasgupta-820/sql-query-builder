@@ -102,37 +102,49 @@ export async function getDatabaseSchema() {
 }
 
 /**
- * Existing SQL generator (unchanged)
+ * SQL generator
  */
+
 export function generateSQL(state: QueryState): string {
-  if (state.nodes.length === 0) return "SELECT * FROM table_name;";
+  if (state.nodes.length === 0) return 'SELECT * FROM table_name;';
 
-  let sql = "SELECT ";
-  sql += state.selectColumns.length > 0 ? state.selectColumns.join(", ") : "*";
-  sql += " FROM " + state.nodes[0].name;
+  let sql = 'SELECT ';
+  sql += state.selectColumns.length > 0 ? state.selectColumns.join(', ') : '*';
+  sql += ` FROM ${state.nodes[0].name}`;
 
+  // Fixed JOIN syntax
   state.joins.forEach((join) => {
-    sql += ` ${join.type} ${join.table} ON ${join.condition}`;
+    sql += ` ${join.type} JOIN ${join.table} ON ${join.condition}`;
   });
 
+  // ✅ FIXED WHERE clause
   if (state.filters.length > 0) {
-    sql += " WHERE ";
+    sql += ' WHERE ';
     sql += state.filters
-      .map((f) => `${f.column} ${f.operator} '${f.value}'`)
-      .join(" AND ");
+      .map((f) => {
+        const firstTable = state.nodes[0]?.name;
+        const qualifiedColumn = f.column.includes('.') 
+          ? f.column 
+          : `${firstTable}.${f.column}`;
+        
+        return `${qualifiedColumn} ${f.operator} '${f.value}'`;
+      })
+      .join(' AND ');
   }
 
   if (state.orderBy.length > 0) {
-    sql += " ORDER BY " + state.orderBy.join(", ");
+    sql += ' ORDER BY ' + state.orderBy.join(', ');
   }
 
   if (state.limit) {
-    sql += " LIMIT " + state.limit;
+    sql += ` LIMIT ${state.limit}`;
   }
 
-  sql += ";";
+  sql += ';';
   return sql;
 }
+
+
 
 /**
  * Existing query executor (still points to your backend)
