@@ -1,5 +1,6 @@
 {
   "name": "sql-query-builder",
+  "homepage": "https://vikasgupta-820.github.io/sql-query-builder/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,13 +8,16 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy":"npm run build",
+    "deploy":"gh-pages -d dist"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.1",
     "@tanstack/react-query": "^5.90.12",
     "@xyflow/react": "^12.10.0",
     "axios": "^1.13.2",
+    "gh-pages": "^6.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-redux": "^9.2.0",
