@@ -87,7 +87,7 @@ Make sure the repository’s GitHub Pages settings are correctly pointing to the
 
 Update this list if needed to match the actual repo:
 
-- Framework: React
+- Framework: React, Redux, ReactFlow
 - Language: TypeScript
 - Build Tool: Vite
 - Styling: CSS 
