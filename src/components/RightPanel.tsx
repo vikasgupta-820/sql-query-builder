@@ -46,17 +46,32 @@ export const RightPanel: React.FC = () => {
 	};
 
 	const handleAddOrderBy = () => {
-		if (!orderByColumn) return;
-
-		const firstTable = state.nodes[0]?.name || "users";
-		const qualified = orderByColumn.includes(".")
-			? orderByColumn
-			: `${firstTable}.${orderByColumn}`;
-
-		const clause = `${qualified} ${orderByDirection}`;
-		const next = [...state.orderBy.filter((c) => c !== clause), clause];
-		dispatch(setOrderBy(next));
-	};
+    if (!orderByColumn) return;
+  
+    const firstTable = state.nodes[0]?.name || 'users';
+    const qualified = orderByColumn.includes('.') 
+      ? orderByColumn 
+      : `${firstTable}.${orderByColumn}`;
+  
+    const clause = `${qualified} ${orderByDirection}`;
+    
+    // ✅ PREVENT DUPLICATES
+    if (state.orderBy.includes(clause)) {
+      setMessage('⚠️ Order by already exists');
+      setTimeout(() => setMessage(''), 2000);
+      return;
+    }
+  
+    const next = [...state.orderBy, clause];
+    dispatch(setOrderBy(next));
+  };
+  
+  
+  const handleRemoveOrderBy = (index: number) => {
+    const next = state.orderBy.filter((_, i) => i !== index);
+    dispatch(setOrderBy(next));
+  };
+  
 
 	const handleCopySQL = () => {
 		navigator.clipboard.writeText(sql);
@@ -184,16 +199,43 @@ export const RightPanel: React.FC = () => {
 					Add Order By
 				</button>
 
-				{state.orderBy.length > 0 && (
-					<div style={{ marginTop: "8px", fontSize: "12px", color: "#444" }}>
-						<div style={{ marginBottom: "4px" }}>Active Order By:</div>
-						{state.orderBy.map((clause, i) => (
-							<div key={i} style={{ marginBottom: "2px" }}>
-								• {clause}
-							</div>
-						))}
-					</div>
-				)}
+        {state.orderBy.length > 0 && (
+  <div style={{ marginTop: '8px', fontSize: '12px', color: '#444' }}>
+    <div style={{ marginBottom: '4px' }}>Active Order By:</div>
+    {state.orderBy.map((clause, i) => (
+      <div
+        key={i}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '4px 6px',
+          background: '#fff',
+          borderRadius: '4px',
+          border: '1px solid #e0e0e0',
+          marginBottom: '4px',
+        }}
+      >
+        <span>{clause}</span>
+        <button
+          onClick={() => handleRemoveOrderBy(i)}
+          style={{
+            background: '#ff5959',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '3px',
+            padding: '0 6px',
+            cursor: 'pointer',
+            fontSize: '11px',
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+
 			</div>
 
 			<div style={styles.panelSection}>
