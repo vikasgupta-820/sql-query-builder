@@ -1,73 +1,120 @@
-# React + TypeScript + Vite
+# SQL Query Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based visual SQL Query Builder that lets you design SQL queries by placing tables on a canvas, creating joins, and adding filters with an intuitive drag‑and‑drop interface. The app generates SQL in real time and lets you copy it for use in your database or application.
 
-Currently, two official plugins are available:
+## Preview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![SQL Query Builder Preview](public/image-query.png)
 
-## React Compiler
+> Live Demo: https://vikasgupta-820.github.io/sql-query-builder/
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Visual canvas to arrange database tables as cards (for example, `users`, `products`).
+- Drag‑and‑drop joins between tables with a dashed connector.
+- Options panel to configure join type (INNER JOIN, etc.) and the ON condition.
+- Filter builder to add conditions on any column (e.g. `id = '11'`).
+- Result limiter to restrict number of returned rows.
+- Live SQL preview panel with a button to copy the generated SQL.
+- Query summary showing number of tables, filters, joins, and limit.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Prerequisites
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- Node.js (LTS recommended)
+- npm or yarn
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Installation
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+git clone https://github.com/vikasgupta-820/sql-query-builder.git
+cd sql-query-builder
+npm install
+
+### Development
+
+
+Open the URL printed in the terminal (usually `http://localhost:5173` or similar, depending on your bundler).
+
+### Production Build
+
+
+### Deploy
+
+The project is configured to be deployed to GitHub Pages:
+
+npm run deploy
+
+Make sure the repository’s GitHub Pages settings are correctly pointing to the `gh-pages` branch.
+
+---
+
+## Usage
+
+1. Select tables from the **Tables** sidebar to add them to the canvas.
+2. Drag tables to position them as desired.
+3. Drag from the connector on one table to another to create a join.
+4. In the **Options** panel:
+   - Choose a join type (e.g. INNER JOIN).
+   - Select the table and set the join condition (e.g. `users.id = products.userId`).
+5. In the **Query Builder** panel:
+   - Choose a column, operator, and value to add filters.
+   - Manage active filters and change the result limit.
+6. Copy the generated SQL from the **Generated SQL** panel and use it in your database tool.
+
+---
+
+## Project Structure
+
+> This is a general overview; file names may differ slightly.
+
+- `src/` – Main application source
+  - `components/` – Reusable UI components (tables list, canvas, panels, etc.)
+  - `hooks/` – Custom hooks for managing query state
+  - `utils/` – Helper functions for building SQL strings
+  - `styles/` – Global styles and theme
+- `public/` – Static assets
+- `package.json` – Scripts and dependencies
+- `vite.config.*` or equivalent – Build configuration
+
+---
+
+## Tech Stack
+
+Update this list if needed to match the actual repo:
+
+- Framework: React, Redux, ReactFlow
+- Language: TypeScript
+- Build Tool: Vite
+- Styling: CSS 
+- Deployment: GitHub Pages
+
+---
+
+## Scripts
+
+Common scripts defined in `package.json`:
+
+- `npm run dev` – Start the development server.
+- `npm run build` – Build the app for production.
+- `npm run preview` – Preview the production build locally.
+- `npm run deploy` – Deploy to GitHub Pages.
+
+---
+
+## Contributing
+
+Contributions, feature requests, and bug reports are welcome.
+
+1. Fork the repository.
+2. Create a new branch: `git checkout -b feature/your-feature`.
+3. Commit your changes: `git commit -m "Add your feature"`.
+4. Push to the branch: `git push origin feature/your-feature`.
+5. Open a pull request.
+
+---
+
